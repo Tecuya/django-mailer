@@ -76,7 +76,6 @@ def send_all():
         message.defer()
         logging.info('message deferred due to failure: %s' % err)
         MessageLog.objects.log(message, 3, log_message=str(err))
-        deferred += 1
         
     try:
         connection = None
@@ -94,12 +93,14 @@ def send_all():
                 
             except (socket_error, smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused, smtplib.SMTPAuthenticationError), err:
                 defer_msg(message,err)
+                deferred += 1
                 
                 # Get new connection, it case the connection itself has an error.
                 connection = None
 
             except Exception, err:
                 defer_msg(message,err)
+                deferred += 1
                 raise
 
     finally:
