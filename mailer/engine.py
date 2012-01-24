@@ -70,7 +70,14 @@ def send_all():
     dont_send = 0
     deferred = 0
     sent = 0
-    
+
+    def defer_msg(message,err):
+        """ Defer, log and count a message """
+        message.defer()
+        logging.info('message deferred due to failure: %s' % err)
+        MessageLog.objects.log(message, 3, log_message=str(err))
+        deferred += 1
+        
     try:
         connection = None
         for message in prioritize():
@@ -84,13 +91,17 @@ def send_all():
                 MessageLog.objects.log(message, 1) # @@@ avoid using literal result code
                 message.delete()
                 sent += 1
+                
             except (socket_error, smtplib.SMTPSenderRefused, smtplib.SMTPRecipientsRefused, smtplib.SMTPAuthenticationError), err:
-                message.defer()
-                logging.info("message deferred due to failure: %s" % err)
-                MessageLog.objects.log(message, 3, log_message=str(err)) # @@@ avoid using literal result code
-                deferred += 1
+                defer_msg(message,err)
+                
                 # Get new connection, it case the connection itself has an error.
                 connection = None
+
+            except Exception, err:
+                defer_msg(message,err)
+                raise
+
     finally:
         logging.debug("releasing lock...")
         lock.release()
