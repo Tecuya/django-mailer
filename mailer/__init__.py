@@ -77,7 +77,6 @@ def send_html_mail(subject, message, message_html, from_email, recipient_list,
 
 def send_mass_mail(datatuple, fail_silently=False, auth_user=None,
                    auth_password=None, connection=None):
-    from mailer.models import make_message
     num_sent = 0
     for subject, message, sender, recipient in datatuple:
         num_sent += send_mail(subject, message, sender, recipient)
